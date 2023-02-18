@@ -1,3 +1,62 @@
+
+
+<div class="slds-grid slds-gutters slds-grid_vertical-align-end">
+
+  <div class="slds-col">
+
+    <div class="slds-form-element">
+      <label class="slds-form-element__label" for="text-input-id-47">
+        <abbr class="slds-required" title="required">* </abbr>Username</label>
+      <div class="slds-form-element__control">
+        <input type="text" [(ngModel)]="user" id="username" placeholder="Add your username" required="" class="slds-input" />
+      </div>
+    </div>
+
+  </div>
+
+  <div class="slds-col">
+
+    <button class="slds-button slds-button_neutral" (click)="join()">Join</button>
+    <button class="slds-button slds-button_neutral" (click)="leave()">Leave</button>
+
+  </div>
+
+  <div class="slds-col">&nbsp;</div>
+  <div class="slds-col">&nbsp;</div>
+</div>
+
+<div class="slds-grid slds-gutters slds-grid_vertical-align-end">
+
+  <div class="slds-col">
+
+    <section role="log" class="slds-chat">
+      <ul class="slds-chat-list">
+        <div *ngFor="let item of messageArray">
+          <li class="slds-chat-listitem"><span><strong>{{item.user}} : </strong> {{item.message}}</span></li>
+        </div>
+
+      </ul>
+    </section>
+
+    <section role="log" class="slds-chat">
+      <ul class="slds-chat-list">
+        <li class="slds-chat-listitem slds-chat-listitem_inbound">
+          <div class="slds-chat-message">
+            <div class="slds-chat-message__body">
+              <div class="slds-chat-message__text slds-chat-message__text_inbound">
+                <span>Hi, my CloudWidget only speaks French</span>
+              </div>
+              <div class="slds-chat-message__meta" aria-label="said Taylor Watson-Rice at 4:59 PM">Taylor Watson-Rice • 4:59 PM</div>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+  </div>
+
+</div>
+
 <div class="container-fluid">
   <div class="row">
     <h2>Instant Chat</h2>
