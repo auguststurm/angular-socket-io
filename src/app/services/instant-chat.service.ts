@@ -1,66 +1,66 @@
 import { Injectable } from '@angular/core';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
 
-export interface UserMessage {
-  user: string;
-  message: string;
-}
+import {
+  ChatMessageData,
+  JoinLeaveData,
+  UserMessage,
+} from '../interfaces/chat.interface';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class InstantChatService {
+  private socket: Socket;
 
-  constructor() { }
+  constructor() {
+    this.socket = io('http://localhost:3000');
+  }
 
-  private socket = io('http://localhost:3000');
-
-  joinRoom(data: any) {
+  joinRoom(data: JoinLeaveData): void {
     console.log('joinRoom', data);
     this.socket.emit('join', data);
-  };
+  }
 
-  newUserJoined() {
-    let observable = new Observable<UserMessage>(observer => {
+  newUserJoined(): Observable<UserMessage> {
+    return new Observable<UserMessage>((observer) => {
       this.socket.on('new user joined', (data) => {
         observer.next(data);
       });
-      return () => {this.socket.disconnect();}
+      return () => {
+        this.socket.disconnect();
+      };
     });
-    return observable;
-  };
+  }
 
-  leaveRoom(data: any){
+  leaveRoom(data: JoinLeaveData): void {
     this.socket.emit('leave', data);
   }
 
-  userLeftRoom(){
-    let observable = new Observable<UserMessage>(observer => {
+  userLeftRoom(): Observable<UserMessage> {
+    return new Observable<UserMessage>((observer) => {
       this.socket.on('left room', (data) => {
         observer.next(data);
       });
       return () => {
         this.socket.disconnect();
-      }
+      };
     });
-    return observable;
-  };
+  }
 
-  sendMessage(data: any) {
+  sendMessage(data: ChatMessageData): void {
     this.socket.emit('message', data);
-  };
+  }
 
-  newMessageReceived(){
-    let observable = new Observable<UserMessage>(observer => {
+  newMessageReceived(): Observable<UserMessage> {
+    return new Observable<UserMessage>((observer) => {
       this.socket.on('new message', (data) => {
         observer.next(data);
       });
       return () => {
         this.socket.disconnect();
-      }
+      };
     });
-    return observable;
-  };
-
-};
+  }
+}
