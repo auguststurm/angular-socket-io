@@ -1,49 +1,66 @@
-import { Component, Input, OnInit } from '@angular/core';
-import {
-  UserMessage,
-  InstantChatService
-} from '../../services/instant-chat.service';
+import { Component, OnInit } from '@angular/core';
+import { UserMessage } from '../../interfaces/chat.interface';
+import { InstantChatService } from '../../services/instant-chat.service';
 
 @Component({
-  selector: 'app-chat',
+  selector: 'app-instant-chat',
   templateUrl: './chat.component.html',
-  styleUrls: ['./chat.component.scss']
+  styleUrls: ['./chat.component.scss'],
 })
 export class ChatComponent implements OnInit {
+  user!: string;
+  room: string = '';
+  messageText!: string;
+  messageArray: UserMessage[] = [];
+  userList: string[] = [];
 
-  constructor(
-    private instantChatService: InstantChatService
-  ) {
-    this.instantChatService.newUserJoined()
-      .subscribe(data => this.messageArray.push(data));
-
-    this.instantChatService.userLeftRoom()
-      .subscribe(data => this.messageArray.push(data));
-
-    this.instantChatService.newMessageReceived()
-      .subscribe(data => this.messageArray.push(data));
-  };
+  constructor(private chatService: InstantChatService) {}
 
   ngOnInit(): void {
+    this.chatService.joinRoom({ user: this.user, room: 'chat' });
+
+    window.onbeforeunload = () => {
+      this.chatService.leaveRoom({ user: this.user, room: this.room });
+    };
+
+    this.chatService.newUserJoined().subscribe((data) => {
+      if (!this.userList.includes(data.user)) {
+        this.userList.push(data.user);
+        if (this.userList.length > 1) {
+          this.messageArray.push({
+            user: '',
+            message: `${data.user} has joined the room.`,
+            timestamp: new Date(),
+          });
+        }
+      }
+    });
+
+    this.chatService.userLeftRoom().subscribe((data) => {
+      this.messageArray.push(data);
+      this.userList = this.userList.filter((user) => user !== data.user);
+    });
+
+    this.chatService.newMessageReceived().subscribe((data) => {
+      this.messageArray.push(data);
+    });
   }
 
-  user: string = '';
-  room: string = 'chat';
-  messageText: string = '';
-  messageArray: UserMessage[] = [];
+  toggleRoom(room: string): void {
+    if (room === '') {
+      this.chatService.leaveRoom({ user: this.user, room: this.room });
+    } else {
+      this.chatService.joinRoom({ user: this.user, room: room });
+    }
+    this.room = room;
+  }
 
-  join() {
-    this.instantChatService.joinRoom({user: this.user, room: this.room});
-  };
-
-  leave() {
-    this.instantChatService.leaveRoom({user: this.user, room: this.room});
-  };
-
-  sendMessage() {
-    this.messageArray.push({ user: this.user, message: this.messageText})
-    this.instantChatService.sendMessage({user: this.user, room: this.room, message: this.messageText});
+  sendMessage(): void {
+    this.chatService.sendMessage({
+      user: this.user,
+      room: this.room,
+      message: this.messageText,
+    });
     this.messageText = '';
-  };
-
-};
+  }
+}

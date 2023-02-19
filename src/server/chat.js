@@ -1,36 +1,66 @@
-const express = require('express');
-const http = require('http');
-const socketio = require('socket.io');
+const express = require("express");
+const http = require("http");
+const socketio = require("socket.io");
+const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const port = process.env.SOCKET_SERVER_PORT || 3000;
+
 const app = express();
+app.use(
+  cors({
+    origin: "http://localhost:4200",
+  })
+);
+app.use(bodyParser.json());
+
 const server = http.createServer(app);
 
 const io = socketio(server, {
-	cors: {
-		origin: 'http://localhost:4200'
-	}
+  cors: {
+    origin: "http://localhost:4200",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["my-custom-header"],
+    credentials: true,
+  },
 });
 
-io.on('connection', socket => {
+let users = {};
 
-  socket.on('join', function(data) {
-    socket.join(data.room);
-    socket.emit('new user joined', {user: data.user, message:'has joined room.'});
-    socket.in('chat').emit('new user joined', {user: data.user, message:'has joined room.'});
+io.on("connection", (socket) => {
+  socket.on("join", ({ user, room }) => {
+    socket.join(room);
 
+    if (!users[room]) {
+      users[room] = [];
+    }
+
+    users[room].push(user);
+
+    io.to(room).emit("new user joined", {
+      user,
+      message: "has joined room.",
+      users: users[room],
+    });
   });
 
-  socket.on('leave', function(data) {
-    socket.emit('left room', {user: data.user, message:'has left room.'});
-    socket.in('chat').emit('left room', {user: data.user, message:'has left room.'});
-    socket.leave(data.room);
+  socket.on("leave", ({ user, room }) => {
+    if (users[room]) {
+      users[room] = users[room].filter((u) => u !== user);
+    }
+
+    io.to(room).emit("left room", {
+      user,
+      message: "has left room.",
+      users: users[room],
+    });
+
+    socket.leave(room);
   });
 
-  socket.on('message',function(data) {
-    socket.in(data.room).emit('new message', {user:data.user, message:data.message});
+  socket.on("message", ({ user, room, message }) => {
+    io.to(room).emit("new message", { user, message });
   });
-
 });
 
 server.listen(port, () => {
